@@ -20,7 +20,6 @@ class Event(models.Model):
             ticket.ticket_type.name : ticket.quantity - Ticket.objects.filter(event_id=self.id, ticket_type=ticket.ticket_type).count()
             for ticket in self.ticket_types.all()
         }
-        print(tickets)
         return tickets
 
 
@@ -34,6 +33,10 @@ class TicketQuantity(models.Model):
     ticket_type = models.ForeignKey(TicketType, on_delete=models.CASCADE)
     event_id = models.ForeignKey(Event, related_name='ticket_types', on_delete=models.CASCADE)
     price = models.FloatField(default=0)
+    
+    @property
+    def remaining(self):
+        return self.quantity - Ticket.objects.filter(event_id=self.event_id, ticket_type=self.ticket_type).count()
 
     def __str__(self):
         return self.event_id.name + '_' + self.ticket_type.name + '_' + str(self.quantity)

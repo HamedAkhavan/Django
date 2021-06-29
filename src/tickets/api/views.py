@@ -14,7 +14,7 @@ class EventViewSet(viewsets.ViewSet):
     def list(self, request):
         queryset = Event.objects.all()
         events = get_list_or_404(queryset)
-        serializer = EventSerializer(queryset, many=True)
+        serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
 
     def create(self, request):
@@ -39,7 +39,7 @@ class TicketViewSet(viewsets.ViewSet):
             "request": request,
         }
         serializer = TicketSerializer(data=request.data, context=context)
-        if serializer.is_valid():
+        if serializer.is_valid() and 'ticket_type' in request.data:
             event = Event.objects.get(pk=event)
             ticket_type_name = TicketType.objects.get(id=request.data['ticket_type']).name
             if event.available_ticket[ticket_type_name]>0:
@@ -58,7 +58,7 @@ class TickeTypetViewSet(viewsets.ViewSet):
     def list(self, request, event=None):
         queryset = TicketType.objects.all()
         ticket_types = get_list_or_404(queryset)
-        serializer = TicketTypeSerializer(ticket_types)
+        serializer = TicketTypeSerializer(ticket_types, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
     
     def create(self, request):
@@ -76,7 +76,7 @@ class TicketQuantityViewSet(viewsets.ViewSet):
         queryset = TicketQuantity.objects.all()
         event = Event.objects.get(pk=event)
         ticket_types = get_list_or_404(queryset, event_id=event)
-        serializer = TicketQuantitySerializer(ticket_types)
+        serializer = TicketQuantitySerializer(ticket_types, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
     
     def create(self, request, event=None):

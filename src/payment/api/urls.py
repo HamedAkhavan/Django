@@ -8,5 +8,5 @@ urlpatterns = [
         'get': 'retrieve',
         'post': 'create',
         }
-    )),
+    ), name='pay'),
 ]

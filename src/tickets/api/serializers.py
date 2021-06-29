@@ -13,6 +13,7 @@ class TicketTypeSerializer(serializers.ModelSerializer):
         ]
 
 class TicketQuantitySerializer(serializers.ModelSerializer):
+    remaining = serializers.ReadOnlyField()
     class Meta:
         model = TicketQuantity
         fields = [
@@ -20,6 +21,7 @@ class TicketQuantitySerializer(serializers.ModelSerializer):
             'quantity',
             'ticket_type',
             'price',
+            'remaining',
         ]
 
 

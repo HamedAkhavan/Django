@@ -7,14 +7,14 @@ urlpatterns = [
     path('events', EventViewSet.as_view({
         'get': 'list',
         'post': 'create',
-        })),
-    path('<int:event>/ticket_types', TicketQuantityViewSet.as_view({
+        }), name='events'),
+    path('<int:event>/ticket-types', TicketQuantityViewSet.as_view({
         'get': 'list',
         'post': 'create',
-        })),
+        }), name='event-ticket-types'),
     path('<int:event>/tickets', TicketViewSet.as_view({
         'get': 'list',
         'post': 'create',
-        })),
-    path('ticket_types', TickeTypetViewSet.as_view({'get': 'list'})),
+        }), name='tickets'),
+    path('ticket_types', TickeTypetViewSet.as_view({'get': 'list'}), name='ticket-types'),
 ]

@@ -20,9 +20,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tickets/api/', include('tickets.api.urls')),
-    path('users/api/', include('users.api.urls')),
-    path('payment/api/', include('payment.api.urls')),
+    path('tickets/api/', include(('tickets.api.urls', 'tickets'), namespace='tickets-api')),
+    path('users/api/', include(('users.api.urls', 'users'), namespace='users-api')),
+    path('payment/api/', include(('payment.api.urls', 'payment'), namespace='payment-api')),
     path('api-auth/', include('rest_framework.urls')),
 ]
 
