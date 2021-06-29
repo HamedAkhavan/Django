@@ -4,7 +4,7 @@ from tickets.models import Ticket
 
 @task(name="delete_ticket_after_15")
 def delete_ticket(id):
-    time.sleep(900)
+    time.sleep(10)
     ticket = Ticket.objects.get(id=id)
     if ticket.status == 'reserved':
         ticket.delete()

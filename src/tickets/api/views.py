@@ -8,7 +8,7 @@ from tickets.models import Event, Ticket, TicketType, TicketQuantity
 from tickets.api.serializers import EventSerializer, TicketSerializer, TicketTypeSerializer, TicketQuantitySerializer
 from tickets.tasks import delete_ticket
 class EventViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny, ]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
 
 
     def list(self, request):
@@ -30,7 +30,10 @@ class TicketViewSet(viewsets.ViewSet):
 
     def list(self, request, event=None):
         queryset = Ticket.objects.all()
-        tickets = get_list_or_404(queryset, event_id=event, user=request.user)
+        if request.user.is_superuser:
+            tickets = get_list_or_404(queryset, event_id=event)
+        else:
+            tickets = get_list_or_404(queryset, event_id=event, user=request.user)
         serializer = TicketSerializer(tickets, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
 
@@ -42,7 +45,10 @@ class TicketViewSet(viewsets.ViewSet):
         if serializer.is_valid() and 'ticket_type' in request.data:
             event = Event.objects.get(pk=event)
             ticket_type_name = TicketType.objects.get(id=request.data['ticket_type']).name
-            if event.available_ticket[ticket_type_name]>0:
+            for ticket_type in event.available_ticket:
+                if ticket_type['name']==ticket_type_name:
+                    count = ticket_type['remaining']
+            if count>0:
                 ticket = serializer.save(event_id = event)
                 ticket.save()
                 delete_ticket.delay(ticket.id)
@@ -77,6 +83,12 @@ class TicketQuantityViewSet(viewsets.ViewSet):
         event = Event.objects.get(pk=event)
         ticket_types = get_list_or_404(queryset, event_id=event)
         serializer = TicketQuantitySerializer(ticket_types, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+    
+    def retrieve(self, request, event=None, ticket_type=None):
+        queryset = TicketQuantity.objects.all()
+        ticket_quantity = get_object_or_404(queryset, id=ticket_type)
+        serializer = TicketQuantitySerializer(ticket_quantity)
         return Response(serializer.data, status.HTTP_200_OK)
     
     def create(self, request, event=None):

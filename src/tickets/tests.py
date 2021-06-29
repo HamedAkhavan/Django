@@ -2,6 +2,7 @@ import time
 import datetime
 import pytz
 import json
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -42,9 +43,13 @@ class TicketTests(APITestCase):
                 'name': 'test',
                 'date': '2021-06-29T12:00:00Z',
                 'address': 'address',
-                'available_ticket':{
-                    'Regular':9
-                }
+                'available_ticket':[
+                    {
+                        'id': 1,
+                        'name': 'Regular',
+                        'remaining': 9
+                    }
+                ]
             }
         ])
 
@@ -69,18 +74,6 @@ class TicketTests(APITestCase):
                 'price': 20.0
             }
         ])
-    
-    ############# this test takes 15 minutes so uncomment it if you like
-
-    # def test_ticket_reservation_expire(self):
-    #     url = reverse('tickets-api:tickets', kwargs={'event': 1})
-    #     data = {
-    #         'ticket_type': 1,
-    #     }
-    #     response = self.client.post(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #     time.sleep(910)
-    #     self.assertEqual(Ticket.objects.count(), 0)
 
     def test_add_ticket_type_for_event(self):
         url = reverse('tickets-api:event-ticket-types', kwargs={'event': 1})
@@ -92,12 +85,10 @@ class TicketTests(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_get_ticket_type_of_event(self):
+    def test_get_ticket_types_of_event(self):
         url = reverse('tickets-api:event-ticket-types', kwargs={'event': 1})
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        from pprint import pprint
-        pprint(response.data)
         self.assertEqual(response.data, [
             {
                 'id': 1,
@@ -107,6 +98,18 @@ class TicketTests(APITestCase):
                 'remaining': 9,
             }
         ])
+
+    def test_get_a_ticket_type_of_event(self):
+        url = reverse('tickets-api:event-ticket-type', kwargs={'event': 1, 'ticket_type':1})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {
+                'id': 1,
+                'quantity': 10,
+                'ticket_type': 1,
+                'price': 20.0,
+                'remaining': 9,
+            })
 
     def test_get_all_ticket_types(self):
         url = reverse('tickets-api:ticket-types')
