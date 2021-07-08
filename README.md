@@ -47,9 +47,11 @@ Ticket selling web application using Django, Django Rest Framework, Celery and R
   * URL: 
           `/events/<evnet_pk>/ticket-types/<pk>/tickets`
   * method: GET
+ 
 ## Users App
 ### Base URL: 
  `users/api/`
+### APIs
 * register a user: 
   * URL: 
    `/register`  
@@ -62,7 +64,7 @@ Ticket selling web application using Django, Django Rest Framework, Celery and R
             'password': '123456'
      }`       
   * method: POST
-### APIs
+
 ## Payment App 
 ### Base URL: 
 `payment/api/`
