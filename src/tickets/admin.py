@@ -1,20 +1,17 @@
 from django.contrib import admin
-from tickets.models import Ticket, Event, TicketType, TicketQuantity
+from tickets.models import Ticket, Event, TicketType
 # Register your models here.
-class TicketTypeAdmin(admin.ModelAdmin):
-    pass
+class TicketTypeInline(admin.TabularInline):
+    model = TicketType
 
 class TicketAdmin(admin.ModelAdmin):
     pass
-class TicketQuantityInline(admin.TabularInline):
-    model = TicketQuantity
 class EventAdmin(admin.ModelAdmin):
     inlines = [
-        TicketQuantityInline,
+        TicketTypeInline,
     ]
 
 
 
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(Event, EventAdmin)
-admin.site.register(TicketType, TicketTypeAdmin)

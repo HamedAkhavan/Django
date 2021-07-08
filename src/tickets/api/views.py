@@ -4,52 +4,39 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
 
-from tickets.models import Event, Ticket, TicketType, TicketQuantity
-from tickets.api.serializers import EventSerializer, TicketSerializer, TicketTypeSerializer, TicketQuantitySerializer
+from tickets.models import Event, Ticket, TicketType
+from tickets.api.serializers import EventSerializer, TicketSerializer, TicketTypeSerializer
 from tickets.tasks import delete_ticket
-class EventViewSet(viewsets.ViewSet):
+class EventViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
 
-
-    def list(self, request):
-        queryset = Event.objects.all()
-        events = get_list_or_404(queryset)
-        serializer = EventSerializer(events, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
-
-    def create(self, request):
-        serializer = EventSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
-
-class TicketViewSet(viewsets.ViewSet):
+class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = Ticket.objects.all()
+    serializer_class = TicketSerializer
 
-    def list(self, request, event=None):
-        queryset = Ticket.objects.all()
+    def list(self, request, event_pk=None):
+        event = Event.objects.get(pk=event_pk)
+        ticket_type = TicketType.objects.filter(event=event)
         if request.user.is_superuser:
-            tickets = get_list_or_404(queryset, event_id=event)
+            tickets = get_list_or_404(self.queryset, ticket_type__in=ticket_type)
         else:
-            tickets = get_list_or_404(queryset, event_id=event, user=request.user)
+            tickets = get_list_or_404(self.queryset, ticket_type__in=ticket_type, user=request.user)
         serializer = TicketSerializer(tickets, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
 
-    def create(self, request, event=None):
+    def create(self, request, event_pk=None):
         context = {
             "request": request,
         }
         serializer = TicketSerializer(data=request.data, context=context)
         if serializer.is_valid() and 'ticket_type' in request.data:
-            event = Event.objects.get(pk=event)
-            ticket_type_name = TicketType.objects.get(id=request.data['ticket_type']).name
-            for ticket_type in event.available_ticket:
-                if ticket_type['name']==ticket_type_name:
-                    count = ticket_type['remaining']
-            if count>0:
-                ticket = serializer.save(event_id = event)
+            event = Event.objects.get(pk=event_pk)
+            ticket_type = TicketType.objects.get(id=request.data['ticket_type'])
+            if ticket_type.remaining>0:
+                ticket = serializer.save(ticket_type = ticket_type)
                 ticket.save()
                 delete_ticket.delay(ticket.id)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -58,44 +45,32 @@ class TicketViewSet(viewsets.ViewSet):
         else:
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
     
-class TickeTypetViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
+# class TickeTypetViewSet(viewsets.ViewSet):
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
+#     queryset = TicketType.objects.all()
+#     serializer_class = TicketTypeSerializer
     
-    def list(self, request, event=None):
-        queryset = TicketType.objects.all()
-        ticket_types = get_list_or_404(queryset)
+class TicketTypeViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
+    queryset = TicketType.objects.all()
+    serializer_class = TicketTypeSerializer
+    
+    def list(self, request, event_pk=None):
+        event = Event.objects.get(pk=event_pk)
+        ticket_types = get_list_or_404(self.queryset, event=event_pk)
         serializer = TicketTypeSerializer(ticket_types, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
     
-    def create(self, request):
+    def retrieve(self, request, event_pk=None, pk=None):
+        ticket_quantity = get_object_or_404(self.queryset, id=pk)
+        serializer = TicketTypeSerializer(ticket_quantity)
+        return Response(serializer.data, status.HTTP_200_OK)
+    
+    def create(self, request, event_pk=None):
         serializer = TicketTypeSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
-
-class TicketQuantityViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
-    
-    def list(self, request, event=None):
-        queryset = TicketQuantity.objects.all()
-        event = Event.objects.get(pk=event)
-        ticket_types = get_list_or_404(queryset, event_id=event)
-        serializer = TicketQuantitySerializer(ticket_types, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
-    
-    def retrieve(self, request, event=None, ticket_type=None):
-        queryset = TicketQuantity.objects.all()
-        ticket_quantity = get_object_or_404(queryset, id=ticket_type)
-        serializer = TicketQuantitySerializer(ticket_quantity)
-        return Response(serializer.data, status.HTTP_200_OK)
-    
-    def create(self, request, event=None):
-        serializer = TicketQuantitySerializer(data=request.data)
-        if serializer.is_valid():
-            event = Event.objects.get(pk=event)
-            serializer.save(event_id=event)
+            event = Event.objects.get(pk=event_pk)
+            serializer.save(event=event)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)

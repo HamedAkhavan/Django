@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from tickets.models import Ticket, TicketType, TicketQuantity, Event
+from tickets.models import Ticket, TicketType, Event
 from users.api.serializers import UserSerializer
 
 
@@ -10,20 +10,10 @@ class TicketTypeSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-        ]
-
-class TicketQuantitySerializer(serializers.ModelSerializer):
-    remaining = serializers.ReadOnlyField()
-    class Meta:
-        model = TicketQuantity
-        fields = [
-            'id',
             'quantity',
-            'ticket_type',
+            'event',
             'price',
-            'remaining',
         ]
-
 
 class TicketSerializer(serializers.ModelSerializer):
     user = UserSerializer()
@@ -36,14 +26,10 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'user', 
-            'event_id', 
             'status',
             'ticket_type',
             'price',
         ]
-        extra_kwargs = {
-            'event_id': {'required': False},
-        }
 
 
 
